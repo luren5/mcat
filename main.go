@@ -13,7 +13,7 @@
 
 package main
 
-import "github.com/luren5/mc/cmd"
+import "github.com/luren5/mcat/cmd"
 
 func main() {
 	cmd.Execute()

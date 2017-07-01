@@ -21,16 +21,11 @@ import (
 	"strings"
 
 	yaml "github.com/ghodss/yaml"
+	"github.com/luren5/mcat/common"
 
 	"github.com/ethereum/go-ethereum/common/compiler"
 	"github.com/spf13/cobra"
 )
-
-type Compiled struct {
-	Name string
-	Abi  string
-	Bin  string
-}
 
 var (
 	sol string
@@ -72,7 +67,10 @@ var compileCmd = &cobra.Command{
 			nameParts := strings.Split(name, ":")
 			contractName := nameParts[len(nameParts)-1]
 
-			compiled := Compiled{name, abi, bin}
+			compiled := new(common.Compiled)
+			compiled.Name = name
+			compiled.Abi = abi
+			compiled.Bin = bin
 			compiledContent, _ := yaml.Marshal(compiled)
 
 			if err := ioutil.WriteFile(compiledDir+"/"+contractName, compiledContent, 0660); err != nil {

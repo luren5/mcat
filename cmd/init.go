@@ -15,22 +15,30 @@ package cmd
 
 import (
 	"fmt"
-	"os/exec"
+	"os"
 
 	"github.com/spf13/cobra"
 )
+
+var projectName string = "testcba"
 
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "init a new mc project",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		// download demo
-		_, err := exec.Command("wget", "https://github.com/bocheninc/L0/blob/master/README.md").Output()
-		if err != nil {
-			fmt.Printf("failed to wget demo package: [%v] \r\n", err)
-			return
+		if err := os.Mkdir(projectName, 0777); err != nil {
+			fmt.Printf("Failed to make dir, %v \r\n", err)
+			os.Exit(0)
 		}
+		if err := os.Chdir("testcba"); err != nil {
+			fmt.Printf("Failed change dir, %v \r\n", err)
+			os.Exit(0)
+		}
+
+		fmt.Println(os.Getwd())
+
+		// download demo
 
 		fmt.Println("Congratulations! You have succeed in initing a new mc project.")
 	},
@@ -38,4 +46,5 @@ var initCmd = &cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(initCmd)
+
 }
