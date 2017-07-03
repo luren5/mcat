@@ -3,9 +3,11 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
 
-	"github.com/luren5/mcat/common"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var compiledDir string = "compiled"
@@ -20,26 +22,40 @@ func ConfigPath() string {
 	return pwd + "/mcat.yaml"
 }
 
-func CheckIfTxMined(ip, rpc_port, txHash string) (interface{}, error) {
-	params := fmt.Sprintf(`"%s"`, txHash)
-	res, err := JrpcPost(ip, rpc_port, "eth_getTransactionReceipt", params)
+func Config(key string) (interface{}, error) {
+	keys := strings.Split(key, ".")
+	configPath := ConfigPath()
+	if _, err := os.Stat(configPath); err != nil {
+		return nil, err
+	}
+	// read config
+	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return nil, err
 	}
-	return res, nil
-}
 
-func SendTransaction(ip, rpc_port string, tx *common.Transaction) (interface{}, error) {
-	var params string
-	switch tx.Type {
-	case common.TxTypeCommon:
-		params = fmt.Sprintf(`{"from": "%s", "to": "%s", "gas": "%s", "gasPrice": "%s","value": "%s", "data": "%s"}`, tx.From, tx.To, tx.Gas, tx.GasPrice, tx.Value, tx.Data)
-	case common.TxTypeContract:
-		params = fmt.Sprintf(`{"from": "%s", "gas": "%s", "gasPrice": "%s","value": "%s", "data": "%s"}`, tx.From, tx.Gas, tx.GasPrice, tx.Value, tx.Data)
-	default:
-		return nil, errors.New("Invalid tx type")
+	var dm map[string]interface{}
+	yaml.Unmarshal(data, &dm)
 
+	model := dm["model"].(string)
+	config, ok := dm[model] // develop or product
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("config %s not found", model))
 	}
-	fmt.Println(params)
-	return JrpcPost(ip, rpc_port, "eth_sendTransaction", params)
+
+	var res map[interface{}]interface{} = config.(map[interface{}]interface{})
+	kl := len(keys)
+	for i := 0; i < kl; i++ {
+		key := interface{}(keys[i])
+		c, ok := res[key]
+		if !ok {
+			return nil, errors.New(fmt.Sprintf("config %s not found", key.(string)))
+		}
+		if i == kl-1 { // end
+			return c, nil
+		}
+		res = c.(map[interface{}]interface{})
+	}
+
+	return res, nil
 }

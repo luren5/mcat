@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 	"time"
 
 	yaml "github.com/ghodss/yaml"
@@ -29,8 +28,6 @@ import (
 
 var (
 	contract string
-	ip       string
-	rpc_port string
 )
 
 // deployCmd represents the deploy command
@@ -45,49 +42,36 @@ var deployCmd = &cobra.Command{
 		if err != nil {
 			fmt.Printf("Failed to read contract file, %v", err)
 			os.Exit(-1)
-			return
 		}
 		var cc common.Compiled
 		yaml.Unmarshal(data, &cc)
 
 		// read config
-		data, err = ioutil.ReadFile(utils.ConfigPath())
-		if err != nil {
-			fmt.Printf("Failed to read config file, %v\r\n", err)
+		var ip, rpc_port, account, password string
+		if r, err := utils.Config("ip"); err != nil {
+			fmt.Sprintf("Failed to read ip config, %v", err)
 			os.Exit(-1)
-		}
-		var dm map[string]interface{}
-		yaml.Unmarshal(data, &dm)
-
-		var config map[string]interface{}
-		if v, ok := dm[dm["model"].(string)]; ok {
-			config = v.(map[string]interface{})
 		} else {
-			fmt.Sprintf("Failed to get config, %v", err)
-			os.Exit(-1)
+			ip = r.(string)
 		}
-		ip = config["ip"].(string)
-		rpc_port = config["rpc_port"].(string)
-
-		if config["ip"] == nil || len(ip) == 0 {
-			fmt.Sprintf("Invalid ip config.")
+		if r, err := utils.Config("rpc_port"); err != nil {
+			fmt.Sprintf("Failed to read rpc port config, %v", err)
 			os.Exit(-1)
+		} else {
+			rpc_port = r.(string)
 		}
-		if config["rpc_port"] == nil || len(rpc_port) == 0 {
-			fmt.Sprintf("Invalid rpc port config.")
+		if r, err := utils.Config("account"); err != nil {
+			fmt.Sprintf("Invalid default account, %v", err)
 			os.Exit(-1)
+		} else {
+			account = r.(string)
 		}
-
-		if config["account"] == nil || len(config["account"].(string)) != 42 || !strings.HasPrefix(config["account"].(string), "0x") {
-			fmt.Println(len(config["account"].(string)))
-			os.Exit(-1)
-		}
-
-		if config["password"] == nil || len(config["password"].(string)) == 0 {
+		if r, err := utils.Config("password"); err != nil {
 			fmt.Printf("You haven't set password of default account, please make sure the default account has been unlocked.")
 		} else {
+			password = r.(string)
 			// unlock
-			params := fmt.Sprintf(`"%s", "%s"`, config["account"], config["password"])
+			params := fmt.Sprintf(`"%s", "%s"`, account, password)
 			_, err := utils.JrpcPost(ip, rpc_port, "personal_unlockAccount", params)
 			if err != nil {
 				fmt.Printf("Failed to unlock the default account, %v ", err)
@@ -95,18 +79,27 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
-		// cal gas
-		gas := "0x76ffce" // here needs cal
-		gasPrice := "0x9184e72a000"
-		// do deploy
 		tx := new(common.Transaction)
-		tx.From = config["account"].(string)
-		tx.Gas = gas
-		tx.GasPrice = gasPrice
+		tx.From = account
 		tx.Data = cc.Bin
 		tx.Type = common.TxTypeContract
 
-		txHash, err := utils.SendTransaction(ip, rpc_port, tx)
+		// cal gas
+		tx.Gas, err = common.EstimateGas(ip, rpc_port, tx)
+		if err != nil {
+			fmt.Printf("Failed to estimate gas, %v ", err)
+			os.Exit(-1)
+		}
+
+		// gasPrice
+		tx.GasPrice, err = common.GasPrice(ip, rpc_port, tx)
+		if err != nil {
+			fmt.Printf("Failed to estimate gas, %v ", err)
+			os.Exit(-1)
+		}
+
+		// do deploy
+		txHash, err := common.SendTransaction(ip, rpc_port, tx)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(-1)
@@ -117,7 +110,7 @@ var deployCmd = &cobra.Command{
 		for {
 			time.Sleep(time.Second * 10)
 
-			res, err := utils.CheckIfTxMined(ip, rpc_port, txHash.(string))
+			res, err := common.CheckIfTxMined(ip, rpc_port, txHash.(string))
 			if err != nil {
 				fmt.Printf("Failed to get tx's status, %v", err)
 				os.Exit(-1)

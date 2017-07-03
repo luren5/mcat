@@ -16,29 +16,28 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 )
 
-var projectName string = "testcba"
+var projectName string
 
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "init a new mc project",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := os.Mkdir(projectName, 0777); err != nil {
-			fmt.Printf("Failed to make dir, %v \r\n", err)
-			os.Exit(0)
-		}
-		if err := os.Chdir("testcba"); err != nil {
-			fmt.Printf("Failed change dir, %v \r\n", err)
+		if len(projectName) == 0 {
+			fmt.Printf("Invalid project name \r\n")
 			os.Exit(0)
 		}
 
-		fmt.Println(os.Getwd())
-
-		// download demo
+		demoUrl := "https://github.com/luren5/mcat-demo.git"
+		if _, err := exec.Command("git", "clone", demoUrl, projectName).Output(); err != nil {
+			fmt.Printf("Failed to clone demo project, %v \r\n", err)
+			os.Exit(0)
+		}
 
 		fmt.Println("Congratulations! You have succeed in initing a new mc project.")
 	},
@@ -47,4 +46,5 @@ var initCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(initCmd)
 
+	initCmd.Flags().StringVar(&projectName, "pro", "", "Project name.")
 }

@@ -22,6 +22,7 @@ import (
 
 	yaml "github.com/ghodss/yaml"
 	"github.com/luren5/mcat/common"
+	"github.com/luren5/mcat/utils"
 
 	"github.com/ethereum/go-ethereum/common/compiler"
 	"github.com/spf13/cobra"
@@ -51,8 +52,7 @@ var compileCmd = &cobra.Command{
 			return
 		}
 
-		dir, _ := os.Getwd()
-		compiledDir := dir + "/compiled"
+		compiledDir := utils.CompiledDir()
 		if _, err := os.Stat(compiledDir); err != nil {
 			os.MkdirAll(compiledDir, 0777)
 		}
@@ -75,10 +75,9 @@ var compileCmd = &cobra.Command{
 
 			if err := ioutil.WriteFile(compiledDir+"/"+contractName, compiledContent, 0660); err != nil {
 				fmt.Printf("Failed to write compiling,  %v \r\n", err)
-				return
+				os.Exit(-1)
 			}
 			fmt.Printf("Succeed in compiling contract %s \r\n", contractName)
-
 		}
 
 	},
