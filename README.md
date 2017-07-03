@@ -4,6 +4,7 @@
 ### 使用方法
 #### 初始化项目
 使用 `mcat init`初始化一个新的项目，初始化项目前请确定已经安装`git`，并且对当前目录有写权限，否则可能会造成初始化失败。
+
 参数列表：
 - `--project` 项目名，也是项目的目录名
 
@@ -14,6 +15,7 @@ Congratulations! You have succeed in initing a new mc project.
 ```
 #### 编译合约
 使用`mcat compile`命令编译合约源码，合约源码放在`contracts`下,  比如示例项目中的`contracts/Ballot.sol`
+
 参数列表：
 - `sol` 指定需要编译的合约文件名
 - `ext` 当指定的合约源文件中有多个合约时，`ext`参数可以排除不需要编译的合约, 多个用`,`隔开，编译后的合约字节码及`abi`存在在`compiled`目录下
@@ -35,6 +37,7 @@ development:
     account: "0x34851ee7379fd43be25df08ab84b7402269fefc8"  # 默认用来发交易的账户
     password: "123456"    # 默认账户的密码
 ```
+
 参数列表：
 - `--contract`  需要部署的合约
 
