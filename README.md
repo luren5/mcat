@@ -1,6 +1,38 @@
 ## mcat
 一个基于Golang实现的以太坊智能合约开发框架
 
+### 安装
+#### Ubuntu
+如果已经安装配置好`golang`，可以使用`golang`提供的工具快速安装
+```
+luren5@ubuntu:~$ go get github.com/luren5/mcat
+luren5@ubuntu:~$ go install github.com/luren5/mcat
+```
+
+
+#### 检查安装是否成功
+安装完成后，在命令行下执行`mcat`，如果能正常
+```
+luren5@ubuntu:~$ mcat
+mcat is a development and testing framework for Ethereum implemented through golang.
+
+Usage:
+  mcat [command]
+
+Available Commands:
+  compile     compile contract
+  deploy      deploy contract
+  help        Help about any command
+  init        init a new mc project
+
+Flags:
+      --config string   config file (default is $HOME/.mcat.yaml)
+  -h, --help            help for mcat
+  -t, --toggle          Help message for toggle
+
+Use "mcat [command] --help" for more information about a command.
+```
+
 ### 使用方法
 #### 初始化项目
 使用 `mcat init`初始化一个新的项目，初始化项目前请确定已经安装`git`，并且对当前目录有写权限，否则可能会造成初始化失败。
