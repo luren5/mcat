@@ -21,20 +21,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var projectName string
+var project string
 
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "init a new mc project",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(projectName) == 0 {
+		if len(project) == 0 {
 			fmt.Printf("Invalid project name \r\n")
 			os.Exit(0)
 		}
 
 		demoUrl := "https://github.com/luren5/mcat-demo.git"
-		if _, err := exec.Command("git", "clone", demoUrl, projectName).Output(); err != nil {
+		if _, err := exec.Command("git", "clone", demoUrl, project).Output(); err != nil {
 			fmt.Printf("Failed to clone demo project, %v \r\n", err)
 			os.Exit(0)
 		}
@@ -46,5 +46,5 @@ var initCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(initCmd)
 
-	initCmd.Flags().StringVar(&projectName, "pro", "", "Project name.")
+	initCmd.Flags().StringVar(&project, "project", "", "Project name.")
 }

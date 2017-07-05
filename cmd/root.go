@@ -28,9 +28,8 @@ var zeroAddress string = "0x0000000000000000000000000000000000000000"
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "mcat",
-	Short: "A brief description of your application",
-	Long: `tion is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "mcat is a development and testing framework for Ethereum implemented through golang.",
+	Long:  ``,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },

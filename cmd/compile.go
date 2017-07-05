@@ -39,17 +39,21 @@ var compileCmd = &cobra.Command{
 	Short: "compile contract",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(sol) == 0 {
+			fmt.Println("No input file specified.")
+			os.Exit(-1)
+		}
 		exclude := make(map[string]bool)
 		for _, kind := range strings.Split(exc, ",") {
-			exclude[strings.ToLower(kind)] = true
+			exclude[kind] = true
 		}
-		contracts, err := compiler.CompileSolidity("solc", sol)
+		contracts, err := compiler.CompileSolidity("solc", utils.ContractsDir()+sol)
 
 		fmt.Println("Waiting for compiling contracts…")
 
 		if err != nil {
 			fmt.Printf("Failed to compile contract, %v \r\n", err)
-			return
+			os.Exit(-1)
 		}
 
 		compiledDir := utils.CompiledDir()
@@ -58,14 +62,14 @@ var compileCmd = &cobra.Command{
 		}
 
 		for name, contract := range contracts {
-			if exclude[strings.ToLower(name)] {
+			nameParts := strings.Split(name, ":")
+			contractName := nameParts[len(nameParts)-1]
+			if exclude[contractName] {
 				continue
 			}
 			abiBytes, _ := json.Marshal(contract.Info.AbiDefinition)
 			abi := string(abiBytes)
 			bin := contract.Code
-			nameParts := strings.Split(name, ":")
-			contractName := nameParts[len(nameParts)-1]
 
 			compiled := new(common.Compiled)
 			compiled.Name = name
