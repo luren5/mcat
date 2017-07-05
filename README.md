@@ -11,7 +11,7 @@ luren5@ubuntu:~$ go install github.com/luren5/mcat
 
 
 #### 检查安装是否成功
-安装完成后，在命令行下执行`mcat`，如果能正常
+命令行下执行`mcat`，打印如下信息则表示安装成功
 ```
 luren5@ubuntu:~$ mcat
 mcat is a development and testing framework for Ethereum implemented through golang.
