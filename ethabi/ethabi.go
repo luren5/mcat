@@ -18,7 +18,7 @@ type EthABI struct {
 
 type ContractParam struct {
 	Type       string
-	Value      interface{}
+	Value      string
 	MemberType uint
 }
 
@@ -43,8 +43,16 @@ func CalBytes(selector string, cp []ContractParam) (string, error) {
 	for _, v := range cp {
 		// bytes<M>
 		if m, _ := regexp.MatchString(`^bytes\d+$`, v.Type); m {
-			paramData = append(paramData, fmt.Sprintf("%x", v.Value.(string))+strings.Repeat("0", 64-2*len(v.Value.(string))))
+			paramData = append(paramData, fmt.Sprintf("%x", v.Value)+strings.Repeat("0", 64-2*len(v.Value)))
 			continue
+		}
+		// int or uint
+		if m, _ := regexp.MatchString(`int\d*$`, v.Type); m {
+			val, err := strconv.Atoi(v.Value)
+			if err != nil {
+				return "", err
+			}
+			paramData = append(paramData, fmt.Sprintf("%064x", val))
 		}
 
 		/********** the following are dynamic ************/
@@ -53,7 +61,7 @@ func CalBytes(selector string, cp []ContractParam) (string, error) {
 			paramData = append(paramData, fmt.Sprintf("%064x", offset))
 			offset = offset + 2*32 // len + content
 
-			val := v.Value.(string)
+			val := v.Value
 			dynaData = append(dynaData, fmt.Sprintf("%064x", len(val)))
 			dynaData = append(dynaData, fmt.Sprintf("%x", val)+strings.Repeat("0", 64-2*len(val)))
 			continue
@@ -63,7 +71,7 @@ func CalBytes(selector string, cp []ContractParam) (string, error) {
 		if m, _ := regexp.MatchString(`^.*\[\d?\]$`, v.Type); m {
 			paramData = append(paramData, fmt.Sprintf("%064x", offset))
 
-			val := v.Value.([]string)
+			val := strings.Split(v.Value, ",")
 			offset = offset + (1+len(val))*32 // num of + every data
 			dynaData = append(dynaData, fmt.Sprintf("%064x", len(val)))
 
@@ -83,9 +91,6 @@ func CalBytes(selector string, cp []ContractParam) (string, error) {
 			}
 			continue
 		}
-
-		/*********************** default ********************/
-		paramData = append(paramData, fmt.Sprintf("%064x", v.Value))
 	}
 
 	/*
@@ -100,26 +105,27 @@ func (e *EthABI) FuncDef(function string) (string, error) {
 	json.Unmarshal(e.ABI, &aa)
 
 	for _, v := range aa {
-		if v["name"] == function {
+		if v["name"].(string) == function {
 			var paramTypes []string
 			inputs := v["inputs"].([]interface{})
 
 			for _, p := range inputs {
 				input := p.(map[string]interface{})
 				t := input["type"].(string)
+				/*
+					// T[k]
+					if m, _ := regexp.MatchString(`^.*\[\d+\]$`, t); m {
+						ptn := `^(\w+?)(\d+)\[(\d+)\]$`
+						reg := regexp.MustCompile(ptn)
+						r := reg.FindSubmatch([]byte(t))
 
-				// T[k]
-				if m, _ := regexp.MatchString(`^.*\[\d+\]$`, t); m {
-					ptn := `^(\w+?)(\d+)\[(\d+)\]$`
-					reg := regexp.MustCompile(ptn)
-					r := reg.FindSubmatch([]byte(t))
-
-					st := string(r[1])
-					l := string(r[2])
-					n := string(r[3])
-					paramTypes = append(paramTypes, fmt.Sprintf("%s%sx%s[%s]", st, l, l, n))
-					continue
-				}
+						st := string(r[1])
+						l := string(r[2])
+						n := string(r[3])
+						paramTypes = append(paramTypes, fmt.Sprintf("%s%sx%s[%s]", st, l, l, n))
+						continue
+					}
+				*/
 				paramTypes = append(paramTypes, t)
 			}
 			def := fmt.Sprintf("%s(%s)", function, strings.Join(paramTypes, ","))
@@ -151,6 +157,7 @@ func (e *EthABI) CombineParams(function, paramStr string) ([]ContractParam, erro
 			break
 		}
 	}
+	// check if num equal
 	if len(inputs) != len(paramSlice) {
 		errMes := fmt.Sprintf("Params num does't match, expecting %d and actually %d", len(inputs), len(paramSlice))
 		return nil, errors.New(errMes)
@@ -162,6 +169,16 @@ func (e *EthABI) CombineParams(function, paramStr string) ([]ContractParam, erro
 		siType := si["type"].(string)
 		siValue := paramSlice[i]
 
+		// bool
+		if siType == "bool" {
+			siType = "uint8"
+			if siValue == "true" {
+				siValue = "1"
+			} else {
+				siValue = "0"
+			}
+		}
+
 		// T[k]
 		if m, _ := regexp.MatchString(`^.*\[\d+\]$`, siType); m {
 			var memberType uint
@@ -171,8 +188,7 @@ func (e *EthABI) CombineParams(function, paramStr string) ([]ContractParam, erro
 				memberType = MemberTypeS
 			}
 
-			valSlice := strings.Split(siValue, ",")
-			c := ContractParam{Type: siType, Value: valSlice, MemberType: memberType}
+			c := ContractParam{Type: siType, Value: siValue, MemberType: memberType}
 			cp = append(cp, c)
 			continue
 		}
@@ -181,22 +197,5 @@ func (e *EthABI) CombineParams(function, paramStr string) ([]ContractParam, erro
 		cp = append(cp, c)
 	}
 
-	fmt.Println(cp) //, inputs)
 	return cp, nil
 }
-
-/*
-func typeRepresent(t string) string {
-	switch t {
-	case "uint":
-		return "uint256"
-	case "int":
-		return "int256"
-	case "fixed":
-		return "fixed128"
-	case "ufixed":
-		return "unfixed128"
-	}
-	return t
-}
-*/
