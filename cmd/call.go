@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/luren5/mcat/common"
 	"github.com/luren5/mcat/ethabi"
 	"github.com/luren5/mcat/utils"
 	"github.com/spf13/cobra"
@@ -59,6 +60,27 @@ var callCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(-1)
 		}
+
+		// send tx
+		ip, rpc_port, err := utils.GetRpcInfo()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
+
+		account, err := utils.GetDefaultAccount()
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
+
+		tx := new(common.Transaction)
+		tx.From = account
+		tx.Data = callBytes
+		tx.Type = common.TxTypeCommon
+
+		common.SendTransaction(ip, rpc_port, tx)
+
 		fmt.Println("func def:", funcDef)
 		fmt.Println("func selector:", selector)
 		fmt.Println("call bytes:", callBytes)
