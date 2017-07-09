@@ -19,7 +19,7 @@ type Transaction struct {
 
 const (
 	TxTypeCommon = iota
-	TxTypeContract
+	TxTypeDeploy
 )
 
 func CheckIfTxMined(ip, rpc_port, txHash string) (interface{}, error) {
@@ -48,7 +48,7 @@ func generateTxParam(tx *Transaction) (string, error) {
 	switch tx.Type {
 	case TxTypeCommon:
 		params = fmt.Sprintf(`{"from": "%s", "to": "%s", "gas": "%s", "gasPrice": "%s","value": "%s", "data": "%s"}`, tx.From, tx.To, tx.Gas, tx.GasPrice, tx.Value, tx.Data)
-	case TxTypeContract:
+	case TxTypeDeploy:
 		params = fmt.Sprintf(`{"from": "%s", "gas": "%s", "gasPrice": "%s","value": "%s", "data": "%s"}`, tx.From, tx.Gas, tx.GasPrice, tx.Value, tx.Data)
 	default:
 		return "", errors.New("Invalid tx type")
