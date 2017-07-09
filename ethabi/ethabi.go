@@ -25,6 +25,7 @@ type ContractParam struct {
 const (
 	MemberTypeS = iota
 	MemberTypeI
+	MemberTypeF
 )
 
 func NewEthABI(contract string, abi []byte) *EthABI {
@@ -54,6 +55,10 @@ func CalBytes(selector string, cp []ContractParam) (string, error) {
 			}
 			paramData = append(paramData, fmt.Sprintf("%064x", val))
 		}
+		// fixed or ufixed
+		if m, _ := regexp.MatchString(`fixed\d*$`, v.Type); m {
+			//fmt.Println(v.Type)
+		}
 
 		/********** the following are dynamic ************/
 		// string or bytes
@@ -68,18 +73,19 @@ func CalBytes(selector string, cp []ContractParam) (string, error) {
 		}
 
 		// T[] or T[k]
-		if m, _ := regexp.MatchString(`^.*\[\d?\]$`, v.Type); m {
+		if m, _ := regexp.MatchString(`^.*\[\d*\]$`, v.Type); m {
 			paramData = append(paramData, fmt.Sprintf("%064x", offset))
 
 			val := strings.Split(v.Value, ",")
 			offset = offset + (1+len(val))*32 // num of + every data
 			dynaData = append(dynaData, fmt.Sprintf("%064x", len(val)))
 
-			if v.MemberType == MemberTypeS { // string or bytes
+			switch v.MemberType {
+			case MemberTypeS:
 				for _, p := range val {
 					dynaData = append(dynaData, fmt.Sprintf("%x", p)+strings.Repeat("0", 64-2*len(p)))
 				}
-			} else { // int
+			case MemberTypeI:
 				for _, p := range val {
 					pi, err := strconv.Atoi(p)
 					if err != nil {
@@ -88,16 +94,17 @@ func CalBytes(selector string, cp []ContractParam) (string, error) {
 					}
 					dynaData = append(dynaData, fmt.Sprintf("%064x", pi))
 				}
+			case MemberTypeF: // fixed and ufixed hasn't been implemented yet
+
 			}
 			continue
 		}
 	}
-
-	/*
-		fmt.Println(paramData)
-		fmt.Println(dynaData)
-	*/
 	return "0x" + selector + strings.Join(paramData, "") + strings.Join(dynaData, ""), nil
+}
+
+func fixedBytes(pf float64) string {
+	return ""
 }
 
 func (e *EthABI) FuncDef(function string) (string, error) {
@@ -112,20 +119,6 @@ func (e *EthABI) FuncDef(function string) (string, error) {
 			for _, p := range inputs {
 				input := p.(map[string]interface{})
 				t := input["type"].(string)
-				/*
-					// T[k]
-					if m, _ := regexp.MatchString(`^.*\[\d+\]$`, t); m {
-						ptn := `^(\w+?)(\d+)\[(\d+)\]$`
-						reg := regexp.MustCompile(ptn)
-						r := reg.FindSubmatch([]byte(t))
-
-						st := string(r[1])
-						l := string(r[2])
-						n := string(r[3])
-						paramTypes = append(paramTypes, fmt.Sprintf("%s%sx%s[%s]", st, l, l, n))
-						continue
-					}
-				*/
 				paramTypes = append(paramTypes, t)
 			}
 			def := fmt.Sprintf("%s(%s)", function, strings.Join(paramTypes, ","))
@@ -180,11 +173,15 @@ func (e *EthABI) CombineParams(function, paramStr string) ([]ContractParam, erro
 		}
 
 		// T[k]
-		if m, _ := regexp.MatchString(`^.*\[\d+\]$`, siType); m {
+		if m, _ := regexp.MatchString(`^.*\[\d*\]$`, siType); m {
 			var memberType uint
 			if strings.Contains(siType, "int") {
 				memberType = MemberTypeI
-			} else {
+			}
+			if strings.Contains(siType, "fixed") {
+				memberType = MemberTypeF
+			}
+			if strings.Contains(siType, "bytes") || strings.Contains(siType, "string") {
 				memberType = MemberTypeS
 			}
 
