@@ -1,16 +1,3 @@
-// Copyright © 2017 NAME HERE <EMAIL ADDRESS>
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
@@ -20,8 +7,6 @@ import (
 	"os"
 	"strings"
 
-	yaml "github.com/ghodss/yaml"
-	"github.com/luren5/mcat/common"
 	"github.com/luren5/mcat/utils"
 
 	"github.com/ethereum/go-ethereum/common/compiler"
@@ -29,8 +14,9 @@ import (
 )
 
 var (
-	sol string
-	exc string
+	sol  string
+	solc string
+	exc  string
 )
 
 // compileCmd represents the compile command
@@ -67,18 +53,17 @@ var compileCmd = &cobra.Command{
 			if exclude[contractName] {
 				continue
 			}
-			abiBytes, _ := json.Marshal(contract.Info.AbiDefinition)
-			abi := string(abiBytes)
-			bin := contract.Code
+			abi, _ := json.Marshal(contract.Info.AbiDefinition)
+			//abi := string(abiBytes)
+			bin := []byte(contract.Code)
 
-			compiled := new(common.Compiled)
-			compiled.Name = name
-			compiled.Abi = abi
-			compiled.Bin = bin
-			compiledContent, _ := yaml.Marshal(compiled)
+			if err := ioutil.WriteFile(compiledDir+"/"+contractName+".abi", abi, 0660); err != nil {
+				fmt.Printf("Failed to write compiling bin,  %v \r\n", err)
+				os.Exit(-1)
+			}
 
-			if err := ioutil.WriteFile(compiledDir+"/"+contractName, compiledContent, 0660); err != nil {
-				fmt.Printf("Failed to write compiling,  %v \r\n", err)
+			if err := ioutil.WriteFile(compiledDir+"/"+contractName+".bin", bin, 0660); err != nil {
+				fmt.Printf("Failed to write compiling bin,  %v \r\n", err)
 				os.Exit(-1)
 			}
 			fmt.Printf("Succeed in compiling contract %s \r\n", contractName)
@@ -92,4 +77,6 @@ func init() {
 
 	compileCmd.Flags().StringVar(&sol, "sol", "", "Path to contract source file to compile.")
 	compileCmd.Flags().StringVar(&exc, "exc", "", "Comma separated types to exclude from compiling.")
+	compileCmd.Flags().StringVar(&solc, "solc", "", "The path to solidity compiler.")
+
 }
