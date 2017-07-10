@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 )
 
 var client = &http.Client{
@@ -35,10 +36,14 @@ func JrpcPost(ip, rpc_port, method, params string) (interface{}, error) {
 	var data map[string]interface{}
 	json.Unmarshal(body, &data)
 
-	if v, ok := data["error"]; ok {
-		vMap := v.(map[string]interface{})
-		return nil, errors.New(fmt.Sprintf("error code:%f error message: %s", vMap["code"].(float64), vMap["message"].(string)))
+	if _, ok := data["error"]; ok {
+		if reflect.TypeOf(data["error"]).Name() == "string" {
+			v := data["error"].(string)
+			return nil, errors.New(v)
+		} else {
+			vMap := data["error"].(map[string]interface{})
+			return nil, errors.New(fmt.Sprintf("error code:%f error message: %s", vMap["code"].(float64), vMap["message"].(string)))
+		}
 	}
-
 	return data["result"], err
 }
