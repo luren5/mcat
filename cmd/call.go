@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	addr     string
 	contract string
 	function string
 	params   string
@@ -76,21 +77,32 @@ var callCmd = &cobra.Command{
 
 		tx := new(common.Transaction)
 		tx.From = account
+		tx.To = addr
 		tx.Data = callBytes
 		tx.Type = common.TxTypeCommon
 
-		common.SendTransaction(ip, rpc_port, tx)
+		// gas
+		if tx.GasPrice, err = common.GasPrice(ip, rpc_port, tx); err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
+		if tx.Gas, err = common.EstimateGas(ip, rpc_port, tx); err != nil {
+			fmt.Println(err)
+			os.Exit(-1)
+		}
 
-		fmt.Println("func def:", funcDef)
-		fmt.Println("func selector:", selector)
-		fmt.Println("call bytes:", callBytes)
-		// params bytes code
+		hash, err := common.SendTransaction(ip, rpc_port, tx)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Printf("Succeed in calling %s, tx hash: %s \r\n", function, hash)
 	},
 }
 
 func init() {
 	RootCmd.AddCommand(callCmd)
 
+	callCmd.Flags().StringVar(&addr, "addr", "", "The contract address.")
 	callCmd.Flags().StringVar(&contract, "contract", "", "The contract name.")
 	callCmd.Flags().StringVar(&function, "function", "", "the function name.")
 	callCmd.Flags().StringVar(&params, "params", "", "params")
