@@ -50,6 +50,7 @@ func generateTxParam(tx *Transaction) (string, error) {
 		params = fmt.Sprintf(`{"from": "%s", "to": "%s", "gas": "%s", "gasPrice": "%s","value": "%s", "data": "%s"}`, tx.From, tx.To, tx.Gas, tx.GasPrice, tx.Value, tx.Data)
 	case TxTypeDeploy:
 		params = fmt.Sprintf(`{"from": "%s", "gas": "%s", "gasPrice": "%s","value": "%s", "data": "%s"}`, tx.From, tx.Gas, tx.GasPrice, tx.Value, tx.Data)
+		//fmt.Println(params)
 	default:
 		return "", errors.New("Invalid tx type")
 
@@ -66,11 +67,7 @@ func SendTransaction(ip, rpc_port string, tx *Transaction) (interface{}, error) 
 }
 
 func GasPrice(ip, rpc_port string, tx *Transaction) (string, error) {
-	param, err := generateTxParam(tx)
-	if err != nil {
-		return "", err
-	}
-	r, err := utils.JrpcPost(ip, rpc_port, "eth_gasPrice", param)
+	r, err := utils.JrpcPost(ip, rpc_port, "eth_gasPrice", "")
 	if err != nil {
 		return "", err
 	}
