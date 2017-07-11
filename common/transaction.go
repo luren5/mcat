@@ -66,7 +66,7 @@ func SendTransaction(ip, rpc_port string, tx *Transaction) (interface{}, error) 
 	return utils.JrpcPost(ip, rpc_port, "eth_sendTransaction", param)
 }
 
-func GasPrice(ip, rpc_port string, tx *Transaction) (string, error) {
+func GasPrice(ip, rpc_port string) (string, error) {
 	r, err := utils.JrpcPost(ip, rpc_port, "eth_gasPrice", "")
 	if err != nil {
 		return "", err
