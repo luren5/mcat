@@ -3,9 +3,11 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"strings"
 
-	"github.com/luren5/mcat/db"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var compiledDir string = "compiled"
@@ -26,48 +28,84 @@ func ConfigPath() string {
 	return pwd + "/mcat.yaml"
 }
 
-func Config(key string) (string, error) {
-	mDB, err := db.NewDB(db.DefaultPath)
-	if err != nil {
-		return "", err
+func Config(key string) (interface{}, error) {
+	keys := strings.Split(key, ".")
+	configPath := ConfigPath()
+	if _, err := os.Stat(configPath); err != nil {
+		return nil, err
 	}
-	v, err := mDB.Get([]byte(key))
+	// read config
+	data, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(v), nil
+
+	var dm map[string]interface{}
+	yaml.Unmarshal(data, &dm)
+
+	model := dm["model"].(string)
+	config, ok := dm[model] // develop or product
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("config %s not found", model))
+	}
+
+	var res map[interface{}]interface{} = config.(map[interface{}]interface{})
+	kl := len(keys)
+	for i := 0; i < kl; i++ {
+		key := interface{}(keys[i])
+		c, ok := res[key]
+		if !ok {
+			return nil, errors.New(fmt.Sprintf("config %s not found", key.(string)))
+		}
+		if i == kl-1 { // end
+			return c, nil
+		}
+		res = c.(map[interface{}]interface{})
+	}
+
+	return res, nil
 }
 
 func GetDefaultAccount() (string, error) {
-	if account, err := Config("account"); err != nil {
-		return "", err
+	var account string
+	if r, err := Config("account"); err != nil {
+		return "", errors.New(fmt.Sprintf("Invalid default account, %v", err))
 	} else {
-		// if password was set, unlock the default account
-		if password, err := Config("password"); err == nil {
-			if ip, rpc_port, err := GetRpcInfo(); err == nil {
-				params := fmt.Sprintf(`"%s", "%s"`, account, password)
-				_, err = JrpcPost(ip, rpc_port, "personal_unlockAccount", params)
-				if err != nil {
-					return "", errors.New(fmt.Sprintf("Failed to unlock the default account, %v ", err))
-				}
+		account = r.(string)
+	}
 
-			}
+	if r, err := Config("password"); err != nil {
+		fmt.Printf("You haven't set password of default account, please make sure the default account has been unlocked.")
+	} else {
+		password := r.(string)
+		// unlock
+		ip, rpc_port, err := GetRpcInfo()
+		if err != nil {
+			return "", err
 		}
 
-		return account, nil
+		params := fmt.Sprintf(`"%s", "%s"`, account, password)
+		_, err = JrpcPost(ip, rpc_port, "personal_unlockAccount", params)
+		if err != nil {
+			return "", errors.New(fmt.Sprintf("Failed to unlock the default account, %v ", err))
+		}
 	}
+	return account, nil
 }
 
 func GetRpcInfo() (string, string, error) {
 	var ip, rpc_port string
-	var err error
-	if ip, err = Config("ip"); err != nil {
+	if r, err := Config("ip"); err != nil {
 		errMes := fmt.Sprintf("Failed to read ip config, %v", err)
 		return "", "", errors.New(errMes)
+	} else {
+		ip = r.(string)
 	}
-	if rpc_port, err = Config("rpc_port"); err != nil {
+	if r, err := Config("rpc_port"); err != nil {
 		errMes := fmt.Sprintf("Failed to read rpc port config, %v", err)
 		return "", "", errors.New(errMes)
+	} else {
+		rpc_port = r.(string)
 	}
 	return ip, rpc_port, nil
 }
