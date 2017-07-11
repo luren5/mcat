@@ -52,7 +52,7 @@ var deployCmd = &cobra.Command{
 		}
 
 		// gasPrice
-		tx.GasPrice, err = common.GasPrice(ip, rpc_port, tx)
+		tx.GasPrice, err = common.GasPrice(ip, rpc_port)
 		if err != nil {
 			fmt.Printf("Failed to estimate gas, %v ", err)
 			os.Exit(-1)
