@@ -82,7 +82,7 @@ var callCmd = &cobra.Command{
 		tx.Type = common.TxTypeCommon
 
 		// gas
-		if tx.GasPrice, err = common.GasPrice(ip, rpc_port); err != nil {
+		if tx.GasPrice, err = common.GasPrice(ip, rpc_port, tx); err != nil {
 			fmt.Println(err)
 			os.Exit(-1)
 		}
