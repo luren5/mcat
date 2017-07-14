@@ -3,11 +3,9 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"strings"
 
-	yaml "gopkg.in/yaml.v2"
+	"github.com/luren5/mcat/db"
 )
 
 var compiledDir string = "compiled"
@@ -29,41 +27,15 @@ func ConfigPath() string {
 }
 
 func Config(key string) (interface{}, error) {
-	keys := strings.Split(key, ".")
-	configPath := ConfigPath()
-	if _, err := os.Stat(configPath); err != nil {
-		return nil, err
-	}
-	// read config
-	data, err := ioutil.ReadFile(configPath)
+	mDB, err := db.NewDB(db.DefaultPath)
 	if err != nil {
 		return nil, err
 	}
-
-	var dm map[string]interface{}
-	yaml.Unmarshal(data, &dm)
-
-	model := dm["model"].(string)
-	config, ok := dm[model] // develop or product
-	if !ok {
-		return nil, errors.New(fmt.Sprintf("config %s not found", model))
+	val, err := mDB.Get([]byte(key))
+	if err != nil {
+		return nil, err
 	}
-
-	var res map[interface{}]interface{} = config.(map[interface{}]interface{})
-	kl := len(keys)
-	for i := 0; i < kl; i++ {
-		key := interface{}(keys[i])
-		c, ok := res[key]
-		if !ok {
-			return nil, errors.New(fmt.Sprintf("config %s not found", key.(string)))
-		}
-		if i == kl-1 { // end
-			return c, nil
-		}
-		res = c.(map[interface{}]interface{})
-	}
-
-	return res, nil
+	return string(val), nil
 }
 
 func GetDefaultAccount() (string, error) {
