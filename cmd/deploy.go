@@ -68,7 +68,7 @@ var deployCmd = &cobra.Command{
 
 		// check status
 		for {
-			time.Sleep(time.Second * 10)
+			time.Sleep(time.Second * 5)
 
 			res, err := common.CheckIfTxMined(ip, rpc_port, txHash.(string))
 			if err != nil {
