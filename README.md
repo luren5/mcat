@@ -14,7 +14,7 @@ luren5@ubuntu:~$ go install github.com/luren5/mcat
 命令行下执行`mcat`，打印如下信息则表示安装成功
 ```
 luren5@ubuntu:~$ mcat
-mcat is a development and testing framework for Ethereum implemented through golang.
+mcat is a development and testing framework for ethereum smart contract implemented through golang.
 
 Usage:
   mcat [command]
@@ -45,12 +45,32 @@ Use "mcat [command] --help" for more information about a command.
 luren5@ubuntu:~$ mcat init --project=mcat-demo
 Congratulations! You have succeed in initing a new mc project.
 ```
+
+#### 加载项目配置
+`mcat.yaml`为项目配置文件，可以根据需求配置多种模式下的不同配置，默认有`Development` 和 `Production` 两种
+```
+    ip: "localhost"        # 节点ip
+    rpc_port: "8090"       # 节点rpc_port
+    account: "0x6e423da3705daaa16a3cdef560293139bb277a3e"   # 默认用来发交易的账户
+    password: "123456"     # 默认账户的密码
+```
+使用`mcat loadConfig`来加载配置文件
+参数列表：
+- `model` 指定模式,  缺省情况下为`Development`
+
+使用示例：
+```
+luren5@ubuntu:~/mcat-demo$ mcat loadConfig --model=Production
+Succeed in loading mcat config.
+```
+
 #### 编译合约
 使用`mcat compile`命令编译合约源码，合约源码放在`contracts`下,  比如示例项目中的`contracts/Ballot.sol`
 
 参数列表：
 - `sol` 指定需要编译的合约文件名
 - `ext` 当指定的合约源文件中有多个合约时，`ext`参数可以排除不需要编译的合约, 多个用`,`隔开，编译后的合约字节码及`abi`存在在`compiled`目录下
+
 使用示例：
 ```
 luren5@ubuntu:~/mcat-demo$ mcat compile --sol=Ballot.sol --exc=Test
@@ -59,17 +79,7 @@ Succeed in compiling contract Ballot
 ```
 
 #### 部署合约
-使用`mcat deploy命令部署合约`，部署合约前需要先启动节点，并修改配置文件`mcat.yaml`中的默认配置
-```
-model: "development"      # 当前开发模式
-
-development:
-    ip: "localhost"       # 节点的IP
-    rpc_port: "8080"      # 节点的RPC服务端口
-    account: "0x34851ee7379fd43be25df08ab84b7402269fefc8"  # 默认用来发交易的账户
-    password: "123456"    # 默认账户的密码
-```
-
+使用`mcat deploy命令部署合约`，部署合约前需要先启动节点，并且已完成配置加载
 参数列表：
 - `--contract`  需要部署的合约
 
@@ -81,3 +91,24 @@ Succeed in deploying contract Ballot, tx hash: 0xece1c87541d5cb16d81fa7fd055fa1b
 Congratulations! tx has been mined, contract address: 0x0cf7ecedc79d011617da8144886c33caa799daa7
 ```
 合约部署后，会返回交易的哈希值，`mcat`会一直等待交易被打包，每5s检查一次，直到交易被打包，返回合约账户地址
+
+#### 调用合约方法
+调用合约方法前需要先编译部署，并得到合约账户的地址
+参数列表：
+-  `--contract` 被调用的合约名
+-  `--addr` 合约账户地址
+-  `--function` 被调用的合约方法名
+-  `--params` 参数列表，多个参数之间用`&`隔开，如果是数组类型参数，成员之间用`，`隔开
+使用示例：
+```
+luren5@ubuntu:~/mcat-demo$ mcat call --contract Test2 --addr 0x23491c9c1b74bb15d988c495f945ec6e1b2720c2  --function cc --params 69
+
+Succeed in calling cc, tx hash: 0xa15e4948a796136d9b461ce86b78f42b6a6ee13edd0aa00196a82e314641b63b
+```
+#### 获取gasPirce
+获取所连接节点的当前gas price
+```
+luren5@ubuntu:~/mcat-demo$ mcat gasPrice
+The current gas price is 0x4a817c800
+```
+
