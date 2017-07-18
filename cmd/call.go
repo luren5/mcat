@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/luren5/mcat/common"
@@ -32,14 +31,12 @@ var callCmd = &cobra.Command{
 			fmt.Println("Invalid function name")
 			os.Exit(-1)
 		}
-
-		abiFile := utils.CompiledDir() + contract + ".abi"
-		abiBytes, err := ioutil.ReadFile(abiFile)
+		// ethabi
+		e, err := ethabi.NewEthABI(contract)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(-1)
 		}
-		e := ethabi.NewEthABI(contract, abiBytes)
 
 		// selector
 		funcDef, err := e.FuncDef(function)

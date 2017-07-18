@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/luren5/mcat/utils"
 )
 
 type EthABI struct {
@@ -28,11 +30,16 @@ const (
 	MemberTypeF
 )
 
-func NewEthABI(contract string, abi []byte) *EthABI {
+func NewEthABI(contract string) (*EthABI, error) {
+	abiFile := utils.CompiledDir() + contract + ".abi"
+	abiBytes, err := ioutil.ReadFile(abiFile)
+	if err != nil {
+		return nil, err
+	}
 	return &EthABI{
 		Contract: contract,
-		ABI:      abi,
-	}
+		ABI:      abiBytes,
+	}, nil
 }
 
 func CalBytes(selector string, cp []ContractParam) (string, error) {
@@ -143,13 +150,21 @@ func (e *EthABI) CombineParams(function, paramStr string) ([]ContractParam, erro
 	var aa []map[string]interface{}
 	json.Unmarshal(e.ABI, &aa)
 
+	// get inputs
 	var inputs []interface{}
+	var target string
+	if function == "constructor" {
+		target = "type"
+	} else {
+		target = "name"
+	}
 	for _, v := range aa {
-		if v["name"].(string) == function {
+		if v[target].(string) == function {
 			inputs = v["inputs"].([]interface{})
 			break
 		}
 	}
+
 	// check if num equal
 	if len(inputs) != len(paramSlice) {
 		errMes := fmt.Sprintf("Params num does't match, expecting %d and actually %d", len(inputs), len(paramSlice))

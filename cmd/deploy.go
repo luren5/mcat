@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/luren5/mcat/common"
+	"github.com/luren5/mcat/ethabi"
 	"github.com/luren5/mcat/utils"
 	"github.com/spf13/cobra"
 )
@@ -17,6 +18,11 @@ var deployCmd = &cobra.Command{
 	Short: "deploy contract",
 	Long:  `create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(contract) == 0 {
+			fmt.Println("Invalid contract.")
+			os.Exit(-1)
+		}
+
 		// read bin
 		binFile := utils.CompiledDir() + contract + ".bin"
 		data, err := ioutil.ReadFile(binFile)
@@ -25,6 +31,28 @@ var deployCmd = &cobra.Command{
 			os.Exit(-1)
 		}
 		bin := string(data)
+
+		//params
+		if len(params) > 0 {
+			// ethabi
+			e, err := ethabi.NewEthABI(contract)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(-1)
+			}
+			// constructor params
+			cp, err := e.CombineParams("constructor", params)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(-1)
+			}
+			paramsBytes, err := ethabi.CalBytes("", cp)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(-1)
+			}
+			bin = bin + utils.Remove0x(paramsBytes)
+		}
 
 		// read config
 		ip, rpc_port, err := utils.GetRpcInfo()
@@ -88,5 +116,6 @@ var deployCmd = &cobra.Command{
 func init() {
 	RootCmd.AddCommand(deployCmd)
 
-	deployCmd.Flags().StringVar(&contract, "contract", "", "name of contract to be deployed")
+	deployCmd.Flags().StringVar(&contract, "contract", "", "Name of contract to be deployed")
+	deployCmd.Flags().StringVar(&params, "params", "", "Params for constructor")
 }
