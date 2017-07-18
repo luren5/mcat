@@ -15,8 +15,8 @@ import (
 
 var (
 	sol  string
-	solc string
 	exc  string
+	solc string = "solc"
 )
 
 // compileCmd represents the compile command
@@ -33,7 +33,7 @@ var compileCmd = &cobra.Command{
 		for _, kind := range strings.Split(exc, ",") {
 			exclude[kind] = true
 		}
-		contracts, err := compiler.CompileSolidity("solc", utils.ContractsDir()+sol)
+		contracts, err := compiler.CompileSolidity(solc, utils.ContractsDir()+sol)
 
 		fmt.Println("Waiting for compiling contracts…")
 
@@ -77,6 +77,6 @@ func init() {
 
 	compileCmd.Flags().StringVar(&sol, "sol", "", "Path to contract source file to compile.")
 	compileCmd.Flags().StringVar(&exc, "exc", "", "Comma separated types to exclude from compiling.")
-	compileCmd.Flags().StringVar(&solc, "solc", "", "The path to solidity compiler.")
+	compileCmd.Flags().StringVar(&solc, "solc", "", "Path to solidity compiler.")
 
 }
