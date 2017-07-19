@@ -3,4 +3,5 @@ mcat.yaml
 compiled/
 contracts/
 data/
+template/
 *.sh
