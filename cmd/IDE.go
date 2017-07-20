@@ -115,7 +115,11 @@ func startIDE() {
 		})
 	})
 
-	r.Run()
+	port, err := utils.Config("ide_port")
+	if err != nil {
+		r.Run()
+	}
+	r.Run(":" + port.(string))
 }
 
 func init() {
