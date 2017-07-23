@@ -52,6 +52,8 @@ func startIDE() {
 	r.POST("/do-compile", doCompile)
 	// refresh list
 	r.GET("/refresh-list", refreshList)
+	// remove file
+	r.GET("/remove-file/:fileName", removeFile)
 
 	port, err := utils.Config("ide_port")
 	if err != nil {
@@ -214,13 +216,19 @@ func refreshList(c *gin.Context) {
 	})
 }
 
+func removeFile(c *gin.Context) {
+	fileName := c.Param("fileName")
+	os.Remove(utils.ContractsDir() + fileName)
+	c.JSON(http.StatusOK, gin.H{
+		"status": SUCCESS,
+	})
+}
+
 // writeContent
 func writeContent(fileName, fileContent string) error {
 	if _, err := os.Stat(utils.ContractsDir()); err != nil {
 		os.MkdirAll(utils.CompiledDir(), 0777)
 	}
-	fmt.Println("filename", fileName)
-	fmt.Println("fileContent", fileContent)
 
 	return ioutil.WriteFile(utils.ContractsDir()+fileName, []byte(fileContent), 0777)
 }
