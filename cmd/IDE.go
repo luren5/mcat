@@ -95,7 +95,7 @@ func edit(c *gin.Context) {
 	}
 	c.HTML(http.StatusOK, "index.templ", gin.H{
 		"fileName":    fileName,
-		"fileContent": string(fileContent),
+		"fileContent": strings.Trim(string(fileContent), " "),
 		"fileSet":     getFileSet(),
 	})
 }
