@@ -44,6 +44,8 @@ func startIDE() {
 	r.GET("/", index)
 	// upload file
 	r.POST("/upload-file", uploadFile)
+	// save file
+	r.POST("/save-file", saveFile)
 	// edit file
 	r.Any("/edit/:fileName", edit)
 	// new file
@@ -145,6 +147,22 @@ func uploadFile(c *gin.Context) {
 	}
 }
 
+//save file
+func saveFile(c *gin.Context) {
+	fileName := c.PostForm("fileName")
+	fileContent := c.PostForm("fileContent")
+	err := writeContent(fileName, fileContent)
+	var msg string
+	if err == nil {
+		msg = "Succeed in saving " + fileName
+	} else {
+		msg = err.Error()
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"msg": msg,
+	})
+}
+
 // new file
 func newFile(c *gin.Context) {
 	fileName := c.Param("fileName")
@@ -192,7 +210,7 @@ func doCompile(c *gin.Context) {
 		abi, _ := json.Marshal(contract.Info.AbiDefinition)
 		bin := contract.Code
 		r := make(map[string]string)
-		r["name"] = contractName
+		r["name"] = contractName + ".sol"
 		r["bin"] = bin
 		r["abi"] = string(abi)
 		result = append(result, r)
@@ -241,7 +259,7 @@ func getFileSet() []string {
 	}
 	var fileSet []string
 	for _, f := range files {
-		if f.IsDir() {
+		if f.IsDir() || !strings.HasSuffix(f.Name(), ".sol") {
 			continue
 		}
 		fileSet = append(fileSet, f.Name())
