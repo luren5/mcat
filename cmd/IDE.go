@@ -50,6 +50,8 @@ func startIDE() {
 	r.GET("/new-file/:fileName", newFile)
 	// do compile
 	r.POST("/do-compile", doCompile)
+	// refresh list
+	r.GET("/refresh-list", refreshList)
 
 	port, err := utils.Config("ide_port")
 	if err != nil {
@@ -201,6 +203,14 @@ func doCompile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": SUCCESS,
 		"msg":    result,
+	})
+}
+
+// refresh list
+func refreshList(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"status": SUCCESS,
+		"msg":    getFileSet(),
 	})
 }
 
