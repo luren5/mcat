@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/compiler"
 	"github.com/gin-gonic/gin"
 	"github.com/luren5/mcat/utils"
 	"github.com/spf13/cobra"
@@ -46,6 +48,8 @@ func startIDE() {
 	r.Any("/edit/:fileName", edit)
 	// new file
 	r.GET("/new-file/:fileName", newFile)
+	// do compile
+	r.POST("/do-compile", doCompile)
 
 	port, err := utils.Config("ide_port")
 	if err != nil {
@@ -160,6 +164,55 @@ func newFile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": SUCCESS,
 	})
+}
+
+// do compile
+func doCompile(c *gin.Context) {
+	fileName := c.PostForm("fileName")
+	fileContent := c.PostForm("fileContent")
+	writeContent(fileName, fileContent)
+
+	// wirte content
+	contracts, err := compiler.CompileSolidity(solc, utils.ContractsDir()+fileName)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"status": FAIL,
+			"msg":    err.Error(),
+		})
+		return
+	}
+	var result []map[string]string
+	for name, contract := range contracts {
+		nameParts := strings.Split(name, ":")
+		contractName := nameParts[len(nameParts)-1]
+		abi, _ := json.Marshal(contract.Info.AbiDefinition)
+		bin := contract.Code
+		r := make(map[string]string)
+		r["name"] = contractName
+		r["bin"] = bin
+		r["abi"] = string(abi)
+		result = append(result, r)
+
+		// write file
+		ioutil.WriteFile(utils.CompiledDir()+"/"+contractName+".abi", abi, 0660)
+		ioutil.WriteFile(utils.CompiledDir()+"/"+contractName+".bin", []byte(bin), 0660)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": SUCCESS,
+		"msg":    result,
+	})
+}
+
+// writeContent
+func writeContent(fileName, fileContent string) error {
+	if _, err := os.Stat(utils.ContractsDir()); err != nil {
+		os.MkdirAll(utils.CompiledDir(), 0777)
+	}
+	fmt.Println("filename", fileName)
+	fmt.Println("fileContent", fileContent)
+
+	return ioutil.WriteFile(utils.ContractsDir()+fileName, []byte(fileContent), 0777)
 }
 
 //get file set
