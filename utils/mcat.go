@@ -38,6 +38,14 @@ func Config(key string) (interface{}, error) {
 	return string(val), nil
 }
 
+func ProjectName() string {
+	r, err := Config("project_name")
+	if err != nil {
+		return ""
+	}
+	return r.(string)
+}
+
 func GetDefaultAccount() (string, error) {
 	var account string
 	if r, err := Config("account"); err != nil {

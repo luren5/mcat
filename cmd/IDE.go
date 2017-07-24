@@ -73,7 +73,8 @@ func init() {
 func index(c *gin.Context) {
 	// lis files
 	c.HTML(http.StatusOK, "index.templ", gin.H{
-		"fileSet": getFileSet(),
+		"fileSet":     getFileSet(),
+		"projectName": utils.ProjectName(),
 	})
 }
 
@@ -99,6 +100,7 @@ func edit(c *gin.Context) {
 		"fileName":    fileName,
 		"fileContent": strings.Trim(string(fileContent), " "),
 		"fileSet":     getFileSet(),
+		"projectName": utils.ProjectName(),
 	})
 }
 
