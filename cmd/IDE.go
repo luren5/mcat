@@ -39,7 +39,7 @@ var IDECmd = &cobra.Command{
 func startIDE() {
 	r := gin.Default()
 	r.Static("./static", "./IDE")
-	r.LoadHTMLGlob("/home/luren5/Project/src/github.com/luren5/mcat/IDE/templ/*")
+	r.LoadHTMLGlob("IDE/templ/*")
 	// index
 	r.GET("/", index)
 	// upload file
