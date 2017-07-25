@@ -71,9 +71,18 @@ func init() {
 
 // index
 func index(c *gin.Context) {
+	fileSet := getFileSet()
+	lastEditFile, _ := utils.LastEditFile()
+
+	for _, v := range fileSet {
+		if v == lastEditFile {
+			c.Redirect(http.StatusTemporaryRedirect, "/edit/"+lastEditFile)
+		}
+	}
+
 	// lis files
 	c.HTML(http.StatusOK, "index.templ", gin.H{
-		"fileSet":     getFileSet(),
+		"fileSet":     fileSet,
 		"projectName": utils.ProjectName(),
 	})
 }
@@ -81,24 +90,23 @@ func index(c *gin.Context) {
 // edit
 func edit(c *gin.Context) {
 	fileName := c.Param("fileName")
+	var errMes, fileContent string
+
 	if _, err := os.Stat(utils.ContractsDir() + "/" + fileName); err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"status": FAIL,
-			"msg":    fmt.Sprintf("Cant't access to file, %v", err),
-		})
-		return
+		errMes = fmt.Sprintf("Cant't access to file %s, %v", fileName, err)
 	}
-	fileContent, err := ioutil.ReadFile(utils.ContractsDir() + "/" + fileName)
-	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"status": FAIL,
-			"msg":    fmt.Sprintf("Failed to get file content, %v", err),
-		})
-		return
+	if f, err := ioutil.ReadFile(utils.ContractsDir() + "/" + fileName); err != nil {
+		errMes = fmt.Sprintf("Failed to get file content, %v", err)
+	} else {
+		fileContent = string(f)
+	}
+
+	if len(errMes) == 0 {
+		utils.LastEditFile(fileName)
 	}
 	c.HTML(http.StatusOK, "index.templ", gin.H{
 		"fileName":    fileName,
-		"fileContent": strings.Trim(string(fileContent), " "),
+		"fileContent": strings.Trim(fileContent, " "),
 		"fileSet":     getFileSet(),
 		"projectName": utils.ProjectName(),
 	})

@@ -26,6 +26,25 @@ func ConfigPath() string {
 	return pwd + "/mcat.yaml"
 }
 
+func LastEditFile(args ...interface{}) (string, error) {
+	mDB, err := db.NewDB(db.DefaultPath)
+	if err != nil {
+		return "", err
+	}
+	key := []byte("lastEditFile")
+	if len(args) == 0 { // get
+		if val, err := mDB.Get(key); err != nil {
+			return "", err
+		} else {
+			return string(val), nil
+		}
+	} else { // set
+		f := args[0]
+		fileName := f.(string)
+		err := mDB.Put(key, []byte(fileName))
+		return "", err
+	}
+}
 func Config(key string) (interface{}, error) {
 	mDB, err := db.NewDB(db.DefaultPath)
 	if err != nil {
