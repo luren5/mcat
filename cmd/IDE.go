@@ -162,15 +162,18 @@ func saveFile(c *gin.Context) {
 	fileName := c.PostForm("fileName")
 	fileContent := c.PostForm("fileContent")
 	err := writeContent(fileName, fileContent)
-	var msg string
 	if err == nil {
-		msg = "Succeed in saving " + fileName
+		c.JSON(http.StatusOK, gin.H{
+			"status": SUCCESS,
+			"msg":    "Succeed in saving " + fileName,
+		})
+		return
 	} else {
-		msg = err.Error()
+		c.JSON(http.StatusOK, gin.H{
+			"status": FAIL,
+			"msg":    err.Error(),
+		})
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"msg": msg,
-	})
 }
 
 // new file
