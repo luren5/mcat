@@ -8,17 +8,14 @@ import (
 	"github.com/luren5/mcat/db"
 )
 
-var compiledDir string = "compiled"
-var contractsDir string = "contracts"
-
 func ContractsDir() string {
 	pwd, _ := os.Getwd()
-	return pwd + "/" + contractsDir + "/"
+	return pwd + "/contracts/"
 }
 
 func CompiledDir() string {
 	pwd, _ := os.Getwd()
-	return pwd + "/" + compiledDir + "/"
+	return pwd + "/compiled/"
 }
 
 func ConfigPath() string {
