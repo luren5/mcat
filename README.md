@@ -112,3 +112,4 @@ luren5@ubuntu:~/mcat-demo$ mcat gasPrice
 The current gas price is 0x4a817c800
 ```
 
+未完待续…
