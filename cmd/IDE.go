@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common/compiler"
 	"github.com/gin-gonic/gin"
@@ -27,16 +26,21 @@ var IDECmd = &cobra.Command{
 	Short: "Solidity local online IDE.",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		startIDE()
+		gin.SetMode("release")
 
-		time.Sleep(time.Second * 50)
-
-		fmt.Println("Starting online IDE, listening on 8080…")
-
+		var port string
+		p, err := utils.Config("ide_port")
+		if err != nil {
+			port = "8080"
+		} else {
+			port = p.(string)
+		}
+		fmt.Println("IDE is on,http://localhost:" + port)
+		startIDE(port)
 	},
 }
 
-func startIDE() {
+func startIDE(port string) {
 	r := gin.Default()
 	r.Static("./static", "./IDE")
 	r.LoadHTMLGlob("IDE/templ/*")
@@ -57,12 +61,7 @@ func startIDE() {
 	// remove file
 	r.GET("/remove-file/:fileName", removeFile)
 
-	port, err := utils.Config("ide_port")
-	if err != nil {
-		r.Run()
-	}
-	r.Run(":" + port.(string))
-	fmt.Println("IDE is on,listening " + port.(string))
+	r.Run(":" + port)
 }
 
 func init() {
