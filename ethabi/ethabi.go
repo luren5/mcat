@@ -143,7 +143,7 @@ func CalSelector(funcDef string) string {
 
 func (e *EthABI) CombineParams(function, paramStr string) ([]ContractParam, error) {
 	paramSlice := strings.Split(paramStr, "&")
-	if len(paramSlice) == 0 {
+	if len(paramStr) == 0 || len(paramSlice) == 0 {
 		return nil, nil
 	}
 
