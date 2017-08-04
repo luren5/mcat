@@ -22,6 +22,8 @@ const (
 	TxTypeDeploy
 )
 
+var ZeroAddr string = "0x0000000000000000000000000000000000000000"
+
 func CheckIfTxMined(ip, rpc_port, txHash string) (interface{}, error) {
 	params := fmt.Sprintf(`"%s"`, txHash)
 	res, err := utils.JrpcPost(ip, rpc_port, "eth_getTransactionReceipt", params)
