@@ -1,39 +1,52 @@
 ## mcat
-一个基于Golang实现的以太坊智能合约开发框架
+mcat是一个基于Golang实现的以太坊智能合约开发脚手架，它可以帮助你快速开发、调试以及部署智能合约，同时mact提供一个通过合约交易参数计算调用字节码的功能，可以帮助开发者不受语言限制，无论是Java, Python或是其它支持网络编程的语言与合约进行交互。
 
 ### 安装
-#### Ubuntu
+#### 安装Solidity
+Ubuntu下可通过以下方式快速安装`Solidity`，更多安装方式请查看[Solidity官方文档](https://solidity.readthedocs.io/en/develop/installing-solidity.html)
+Ubuntu
+```
+sudo add-apt-repository ppa:ethereum/ethereum
+sudo apt-get update
+sudo apt-get install solc
+```
+
+#### 安装mcat
 如果已经安装配置好`golang`，可以使用`golang`提供的工具快速安装
 ```
 luren5@ubuntu:~$ go get github.com/luren5/mcat
 luren5@ubuntu:~$ go install github.com/luren5/mcat
 ```
-
+如果对`golang`不熟悉，可以直接下载编译好的安装包，放到`$PATHA`目录下
 
 #### 检查安装是否成功
-命令行下执行`mcat`，打印如下信息则表示安装成功
+命令行下执行`mcat`，检查是否安装成功
 ```
 luren5@ubuntu:~$ mcat
-mcat is a development and testing framework for ethereum smart contract implemented through golang.
+mcat is a development and testing framework for Ethereum implemented through golang.
 
 Usage:
   mcat [command]
 
 Available Commands:
+  IDE         Solidity local online IDE.
+  call        Call contract function.
   compile     compile contract
   deploy      deploy contract
+  gasPrice    Show the current gas price.
   help        Help about any command
   init        init a new mc project
+  loadConfig  Load config from the config file mcat.yaml.
+  serve       Call contract function.
 
 Flags:
-      --config string   config file (default is $HOME/.mcat.yaml)
-  -h, --help            help for mcat
-  -t, --toggle          Help message for toggle
+  -h, --help   help for mcat
 
 Use "mcat [command] --help" for more information about a command.
 ```
 
-### 使用方法
+### mcat使用方法
+注意：所有的mcat操作命令都必须在项目根目录下执行
 #### 初始化项目
 使用 `mcat init`初始化一个新的项目，初始化项目前请确定已经安装`git`，并且对当前目录有写权限，否则可能会造成初始化失败。
 
@@ -45,14 +58,25 @@ Use "mcat [command] --help" for more information about a command.
 luren5@ubuntu:~$ mcat init --project=mcat-demo
 Congratulations! You have succeed in initing a new mc project.
 ```
+`init`命令会clone[mcat模板项目](https://github.com/luren5/mcat-demo),  以下是各目录结构信息
+```
+- IDE                 # Solidity编辑器相关静态文件
+- compiled            # 存放合约编译后的abi和bin文件
+- contracts           # 合约源文件目录 
+- data                # 配置文件加载后及项目相关数据存放目录
+- mcat.yaml           # 配置文件
+```
 
 #### 加载项目配置
 `mcat.yaml`为项目配置文件，可以根据需求配置多种模式下的不同配置，默认有`Development` 和 `Production` 两种
 ```
-    ip: "localhost"        # 节点ip
-    rpc_port: "8090"       # 节点rpc_port
-    account: "0x6e423da3705daaa16a3cdef560293139bb277a3e"   # 默认用来发交易的账户
-    password: "123456"     # 默认账户的密码
+    project_name: "PROJECT_NAME"        # init操作会自动替换为`--project`参数值
+    ip: "localhost"                     # 节点ip
+    rpc_port: "8080"                    # 节点的rpc_port
+    account: "0x34851ee7379fd43be25df08ab84b7402269fefc8"   # 默认发交易的账户，必须在你的节点中存在
+    password: "123456"    # 密码账户的密码
+    ide_port: "50728"     # IDE运行的端口
+    server_port: "50729"  # serve服务运行的端口
 ```
 使用`mcat loadConfig`来加载配置文件
 参数列表：
@@ -79,7 +103,7 @@ Succeed in compiling contract Ballot
 ```
 
 #### 部署合约
-使用`mcat deploy命令部署合约`，部署合约前需要先启动节点，并且已完成配置加载
+使用`mcat deploy命令部署合约`，部署合约前需要先启动节点，并且已完成配置加载（loadConfig）操作
 参数列表：
 - `--contract`  需要部署的合约
 
@@ -112,4 +136,24 @@ luren5@ubuntu:~/mcat-demo$ mcat gasPrice
 The current gas price is 0x4a817c800
 ```
 
-未完待续…
+#### 打开本地IDE
+mcat提供一个简洁的本地IDE
+使用示例
+```
+luren5@ubuntu:~/mcat-demo$ mcat IDE
+IDE has been started, http://localhost:50728
+```
+启动后打开`http://localhost:50728` 即可使用IDE
+
+#### 打开mcat server
+mcat server是一个将调用合约方法相关参数 转换为交易的字节码（data）的服务器，这样开发者无论是使用`PHP`、`Python`、`Java`或者其它网络编程语言，只要遵循mcat的rpc规范，均可获得合约交易的data字段值，进而与合约进行交互
+
+使用之前需要对合约进行编译，确实`compiled`目录下有与合约对应的`abi`
+使用示例，另外需要启动`geth`节点以计算该合约调用需要消耗的`gas`
+```
+luren5@ubuntu:~/mcat-demo$ mcat serve
+server has been started, listening 50727
+# 新启一个终端窗口
+luren5@ubuntu:~/mcat$ curl -X POST --data '{"jsonrpc":"2.0","method":"TxData.Detail","params":[{"Contract":"Ballot", "Function": "vote", "Params":"2"}],"id":67}' http://localhost:50727
+{"id":67,"result":"{\"Bin\":\"0x0121b93f0000000000000000000000000000000000000000000000000000000000000002\",\"Gas\":\"0x53d9\"}","error":null}
+``` 
