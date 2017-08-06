@@ -35,7 +35,7 @@ var IDECmd = &cobra.Command{
 		} else {
 			port = p.(string)
 		}
-		fmt.Println("IDE is on,http://localhost:" + port)
+		fmt.Println("IDE has been started, http://localhost:" + port)
 		startIDE(port)
 	},
 }

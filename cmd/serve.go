@@ -109,11 +109,20 @@ var serveCmd = &cobra.Command{
 		// rpc server
 		var server = rpc.NewServer()
 		server.Register(new(TxData))
-		listener, err := net.Listen("tcp", ":50728")
+		var server_port string
+		if s, err := utils.Config("server_port"); err != nil {
+			server_port = "50729"
+		} else {
+			server_port = s.(string)
+		}
+
+		listener, err := net.Listen("tcp", ":"+server_port)
 		if err != nil {
 			fmt.Println("listen error:", err)
 		}
 		defer listener.Close()
+		fmt.Println("server has been started, listening " + server_port)
+
 		http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path == "/" {
 				serverCodec := jsonrpc.NewServerCodec(&HttpConn{in: r.Body, out: w})
@@ -128,7 +137,6 @@ var serveCmd = &cobra.Command{
 
 			}
 		}))
-
 	},
 }
 
