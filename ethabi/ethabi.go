@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/crypto"
@@ -56,11 +56,20 @@ func CalBytes(selector string, cp []ContractParam) (string, error) {
 		}
 		// int or uint
 		if m, _ := regexp.MatchString(`int\d*$`, v.Type); m {
-			val, err := strconv.Atoi(v.Value)
-			if err != nil {
-				return "", err
+			bi := big.NewInt(0)
+			if _, ok := bi.SetString(v.Value, 10); !ok {
+				errMes := fmt.Sprintf("Failed to convert %s to big int", v.Value)
+				return "", errors.New(errMes)
 			}
-			paramData = append(paramData, fmt.Sprintf("%064x", val))
+
+			/*
+				val, err := strconv.Atoi(v.Value)
+				if err != nil {
+					return "", err
+				}
+			*/
+			fmt.Println("bi: ", bi)
+			paramData = append(paramData, fmt.Sprintf("%064x", bi))
 		}
 		// fixed or ufixed
 		if m, _ := regexp.MatchString(`fixed\d*$`, v.Type); m {
@@ -94,12 +103,20 @@ func CalBytes(selector string, cp []ContractParam) (string, error) {
 				}
 			case MemberTypeI:
 				for _, p := range val {
-					pi, err := strconv.Atoi(p)
-					if err != nil {
-						errMes := fmt.Sprintf("Invalid %s value: %s", v.Type, p)
+					/*
+						pi, err := strconv.Atoi(p)
+								if err != nil {
+									errMes := fmt.Sprintf("Invalid %s value: %s", v.Type, p)
+									return "", errors.New(errMes)
+								}
+					*/
+
+					bi := big.NewInt(0)
+					if _, ok := bi.SetString(p, 10); !ok {
+						errMes := fmt.Sprintf("Failed to convert %s to big int", v.Value)
 						return "", errors.New(errMes)
 					}
-					dynaData = append(dynaData, fmt.Sprintf("%064x", pi))
+					dynaData = append(dynaData, fmt.Sprintf("%064x", bi))
 				}
 			case MemberTypeF: // fixed and ufixed hasn't been implemented yet
 
