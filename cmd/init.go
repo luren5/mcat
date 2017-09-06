@@ -23,7 +23,7 @@ var initCmd = &cobra.Command{
 		}
 		fmt.Println("Starting the initialization, wait a moment…")
 
-		demoUrl := "https://github.com/luren5/mcat-demo.git"
+		demoUrl := "git@github.com:luren5/mcat-demo.git"
 		if _, err := exec.Command("git", "clone", demoUrl, project).Output(); err != nil {
 			fmt.Printf("Failed to clone demo project, %v \r\n", err)
 			os.Exit(0)
