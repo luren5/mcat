@@ -1,6 +1,7 @@
 test.sol
 mcat.yaml
 compiled/
+ballot/
 contracts/
 data/
 template/

@@ -32,13 +32,13 @@ const (
 
 func NewEthABI(contract string) (*EthABI, error) {
 	abiFile := utils.CompiledDir() + contract + ".abi"
-	abiBytes, err := ioutil.ReadFile(abiFile)
+	abiBytesCode, err := ioutil.ReadFile(abiFile)
 	if err != nil {
 		return nil, err
 	}
 	return &EthABI{
 		Contract: contract,
-		ABI:      abiBytes,
+		ABI:      abiBytesCode,
 	}, nil
 }
 
@@ -49,6 +49,10 @@ func CalBytes(selector string, cp []ContractParam) (string, error) {
 	var offset = paramNum * 32
 
 	for _, v := range cp {
+		// address
+		if v.Type == "address" {
+			paramData = append(paramData, strings.Repeat("0", 24)+utils.Remove0x(v.Value))
+		}
 		// bytes<M>
 		if m, _ := regexp.MatchString(`^bytes\d+$`, v.Type); m {
 			paramData = append(paramData, fmt.Sprintf("%x", v.Value)+strings.Repeat("0", 64-2*len(v.Value)))
@@ -68,7 +72,6 @@ func CalBytes(selector string, cp []ContractParam) (string, error) {
 					return "", err
 				}
 			*/
-			fmt.Println("bi: ", bi)
 			paramData = append(paramData, fmt.Sprintf("%064x", bi))
 		}
 		// fixed or ufixed
@@ -134,9 +137,15 @@ func fixedBytes(pf float64) string {
 func (e *EthABI) FuncDef(function string) (string, error) {
 	var aa []map[string]interface{}
 	json.Unmarshal(e.ABI, &aa)
+	var target string
+	if function == "constructor" {
+		target = "type"
+	} else {
+		target = "name"
+	}
 
 	for _, v := range aa {
-		if v["name"].(string) == function {
+		if t, ok := v[target]; ok && t.(string) == function {
 			var paramTypes []string
 			inputs := v["inputs"].([]interface{})
 
@@ -227,4 +236,22 @@ func (e *EthABI) CombineParams(function, paramStr string) ([]ContractParam, erro
 	}
 
 	return cp, nil
+}
+
+func (e *EthABI) IsConstant(function string) (bool, error) {
+	var aa []map[string]interface{}
+	json.Unmarshal(e.ABI, &aa)
+
+	for _, v := range aa {
+		if t, ok := v["name"]; ok && t.(string) == function {
+			if c, ok := v["constant"]; ok {
+				if c.(bool) {
+					return true, nil
+				} else {
+					return false, nil
+				}
+			}
+		}
+	}
+	return false, errors.New("the specified function was not found")
 }
